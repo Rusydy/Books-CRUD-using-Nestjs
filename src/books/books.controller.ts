@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Query, Delete, Body } from '@nestjs/common'
+import { Controller, Get, Param, Post, Patch, Delete, Body, HttpStatus } from '@nestjs/common'
 import { query } from 'express'
 import { BooksService } from './books.service'
 import { CreateBookDTO } from './dto/create-book.dto'
@@ -14,20 +14,61 @@ export class BooksController {
   }
 
   @Get(':bookID')
-  async getBook(@Param('bookID') bookID) {
-    const book = await this.booksService.getBook(bookID)
+  async getSingleBook(@Param('bookID') bookID) {
+    const book = await this.booksService.getSingleBook(bookID)
     return book
   }
 
   @Post()
-  async addBook(@Body() createBookDTO: CreateBookDTO) {
-    const book = await this.booksService.addBook(createBookDTO)
-    return book 
+  async addBook(
+    @Body('title') bookTitle: string,
+    @Body('description') bookDesc: string,
+    @Body('author') bookAuthor: string,
+    @Body('price') bookPrice: number
+  ) {
+    const book = await this.booksService.insertBook(
+      bookTitle,
+      bookDesc,
+      bookAuthor,
+      bookPrice
+    )
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Book added successfully',
+      data: book,
+    }
+  }
+
+  @Patch(':id')
+  async updateBook(
+    @Param('id') bookID: string,
+    @Body('title') bookTitle: string,
+    @Body('description') bookDesc: string,
+    @Body('author') bookAuthor: string,
+    @Body('price') bookPrice: number
+  ) {
+    const book = await this.booksService.updateBook(
+      bookID,
+      bookTitle,
+      bookDesc,
+      bookAuthor,
+      bookPrice,
+    )
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Book updated successfully',
+      book: book,
+    }
   }
 
   @Delete() // why Delete() has no param?
-  async deleteBook(@Query() query) {
-    const books = await this.booksService.deleteBook(query.bookID)
-    return books
+  async deleteBook(@Param('id') bookID: string) {
+    const isDeleted = await this.booksService.delete(bookID)
+    if (isDeleted) {
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'book deleted successfully'
+      }
+    }
   }
 }
